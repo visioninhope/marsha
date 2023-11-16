@@ -18,6 +18,7 @@ from marsha.core.defaults import (
     JITSI,
     LIVE_CHOICES,
     LIVE_TYPE_CHOICES,
+    PEERTUBE_PIPELINE,
     RUNNING,
     STOPPED,
 )
@@ -30,6 +31,7 @@ from marsha.core.serializers.shared_live_media import (
 )
 from marsha.core.serializers.thumbnail import ThumbnailSerializer
 from marsha.core.serializers.timed_text_track import TimedTextTrackSerializer
+from marsha.core.storage.storage_class import video_storage
 from marsha.core.utils import cloudfront_utils, jitsi_utils, time_utils, xmpp_utils
 
 
@@ -45,6 +47,12 @@ class UpdateLiveStateSerializer(serializers.Serializer):
     logGroupName = serializers.CharField()
     requestId = serializers.CharField()
     extraParameters = serializers.DictField(allow_null=True, required=False)
+
+
+class UploadEndedSerializer(serializers.Serializer):
+    """A serializer to validate data submitted on the UploadEnded API endpoint."""
+
+    file_key = serializers.CharField()
 
 
 class InitLiveStateSerializer(serializers.Serializer):
@@ -165,7 +173,6 @@ class VideoBaseSerializer(serializers.ModelSerializer):
 
         base = f"{settings.AWS_S3_URL_PROTOCOL}://{settings.CLOUDFRONT_DOMAIN}/{obj.pk}"
         stamp = time_utils.to_timestamp(obj.uploaded_on)
-
         if settings.CLOUDFRONT_SIGNED_URLS_ACTIVE:
             params = get_video_cloudfront_url_params(obj.pk)
 
@@ -199,12 +206,13 @@ class VideoBaseSerializer(serializers.ModelSerializer):
 
                 # Previews
                 urls["previews"] = f"{base}/previews/{stamp}_100.jpg"
-        else:
+        elif obj.transcode_pipeline == PEERTUBE_PIPELINE:
+            base = f"scw/{obj.pk}/video/{stamp}"
             for resolution in obj.resolutions:
                 # MP4
                 mp4_url = (
-                    f"{base}/{stamp}/{stamp}-{resolution}-fragmented.mp4"
-                    f"?response-content-disposition={content_disposition}"
+                    video_storage.url(f"{base}/{stamp}-{resolution}-fragmented.mp4")
+                    + f"?response-content-disposition={content_disposition}"
                 )
                 # Sign the urls of mp4 videos only if the functionality is activated
                 if settings.CLOUDFRONT_SIGNED_URLS_ACTIVE:
@@ -212,10 +220,12 @@ class VideoBaseSerializer(serializers.ModelSerializer):
 
                 urls["mp4"][resolution] = mp4_url
 
-                urls["thumbnails"][resolution] = f"{base}/{stamp}/thumbnail.jpg"
-                urls["previews"] = f"{base}/{stamp}/thumbnail.jpg"
+                urls["thumbnails"][resolution] = thumbnail_urls.get(
+                    resolution, video_storage.url(f"{base}/thumbnail.jpg")
+                )
+                urls["previews"] = video_storage.url(f"{base}/thumbnail.jpg")
                 urls["manifests"] = {
-                    "hls": f"{base}/{stamp}/master.m3u8",
+                    "hls": video_storage.url(f"{base}/master.m3u8"),
                 }
 
         return urls

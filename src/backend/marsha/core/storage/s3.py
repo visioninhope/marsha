@@ -45,7 +45,6 @@ def initiate_video_upload(request, pk):
 
     video = Video.objects.get(pk=pk)
     key = video.get_source_s3_key(stamp=stamp)
-
     return create_presigned_post(
         [
             ["starts-with", "$Content-Type", "video/"],
@@ -53,6 +52,8 @@ def initiate_video_upload(request, pk):
         ],
         {},
         key,
+        S3VideoStorage.bucket_name,
+        "VIDEOS_S3",
     )
 
 

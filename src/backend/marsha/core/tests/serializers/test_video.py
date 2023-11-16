@@ -1,7 +1,7 @@
 """Tests for the VideoBaseSerializer serializer of the Marsha project."""
 from datetime import datetime, timezone as baseTimezone
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from marsha.core.factories import VideoFactory
 from marsha.core.serializers import VideoBaseSerializer
@@ -39,8 +39,41 @@ class VideoBaseSerializerTest(TestCase):
             serializer.data["urls"]["previews"],
         )
 
-    def test_video_serializer_urls_with_not_aws_pipeline(self):
+    @override_settings(
+        MEDIA_URL="https://abc.cloudfront.net/",
+    )
+    def test_video_serializer_urls_with_peertube_pipeline(self):
         """The VideoBaseSerializer should return the right URLs."""
+        date = datetime(2022, 1, 1, tzinfo=baseTimezone.utc)
+        video = VideoFactory(
+            transcode_pipeline="Peertube",
+            live_state=None,
+            resolutions=[1080],
+            uploaded_on=date,
+        )
+
+        serializer = VideoBaseSerializer(video)
+
+        self.assertEqual(
+            f"https://abc.cloudfront.net/scw/{video.pk}/video/1640995200/thumbnail.jpg",
+            serializer.data["urls"]["thumbnails"][1080],
+        )
+        self.assertEqual(
+            f"https://abc.cloudfront.net/scw/{video.pk}/video/1640995200/master.m3u8",
+            serializer.data["urls"]["manifests"]["hls"],
+        )
+        self.assertEqual(
+            f"https://abc.cloudfront.net/scw/{video.pk}/video/1640995200/thumbnail.jpg",
+            serializer.data["urls"]["previews"],
+        )
+        self.assertTrue(
+            f"https://abc.cloudfront.net/scw/{video.pk}/"
+            "video/1640995200/1640995200-1080-fragmented.mp4"
+            in serializer.data["urls"]["mp4"][1080]
+        )
+
+    def test_video_serializer_urls_with_no_pipeline(self):
+        """The VideoBaseSerializer should return empty URLs."""
         date = datetime(2022, 1, 1, tzinfo=baseTimezone.utc)
         video = VideoFactory(
             transcode_pipeline=None,
@@ -51,19 +84,4 @@ class VideoBaseSerializerTest(TestCase):
 
         serializer = VideoBaseSerializer(video)
 
-        self.assertTrue(
-            f"https://abc.cloudfront.net/{video.pk}/1640995200/1640995200-1080-fragmented.mp4"
-            in serializer.data["urls"]["mp4"][1080]
-        )
-        self.assertEqual(
-            f"https://abc.cloudfront.net/{video.pk}/1640995200/thumbnail.jpg",
-            serializer.data["urls"]["thumbnails"][1080],
-        )
-        self.assertEqual(
-            f"https://abc.cloudfront.net/{video.pk}/1640995200/master.m3u8",
-            serializer.data["urls"]["manifests"]["hls"],
-        )
-        self.assertEqual(
-            f"https://abc.cloudfront.net/{video.pk}/1640995200/thumbnail.jpg",
-            serializer.data["urls"]["previews"],
-        )
+        self.assertEqual({"mp4": {}, "thumbnails": {}}, serializer.data["urls"])

@@ -267,7 +267,7 @@ class Video(BaseFile, RetentionDateObjectMixin):
         ]
 
     def get_source_s3_key(self, stamp=None):
-        """Compute the S3 key in the source bucket (ID of the video + version stamp).
+        """Compute the S3 key in the bucket (ID of the video + version stamp).
 
         Parameters
         ----------
@@ -275,18 +275,18 @@ class Video(BaseFile, RetentionDateObjectMixin):
             Passing a value for this argument will return the source S3 key for the video assuming
             its active stamp is set to this value. This is useful to create an upload policy for
             this prospective version of the video, so that the client can upload the file to S3
-            and the confirmation lambda can set the `uploaded_on` field to this value only after
-            the video transcoding job is successful.
+            and the confirmation lambda or callback can set the `uploaded_on` field to this value
+            only after the video transcoding job is successful.
 
         Returns
         -------
         string
-            The S3 key for the video in the source bucket, where uploaded videos are stored before
+            The S3 key for the video in the bucket, where uploaded videos are stored before
             they are converted to the destination bucket.
 
         """
         stamp = stamp or to_timestamp(self.uploaded_on)
-        return f"{self.pk}/video/{self.pk}/{stamp}"
+        return f"tmp/{self.pk}/video/{stamp}"
 
     def update_upload_state(self, upload_state, uploaded_on, **extra_parameters):
         """Manage upload state.
