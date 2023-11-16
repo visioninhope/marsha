@@ -11,6 +11,8 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - Retrieve BBB learning analytics and send them through API
+- Add scaleway storage configuration
+- Add Peertube pipeline to VOD
 - Classroom attendance analytics (#2499) 
 
 ### Changed
