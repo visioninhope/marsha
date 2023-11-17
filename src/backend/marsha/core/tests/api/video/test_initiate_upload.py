@@ -106,7 +106,6 @@ class VideoInitiateUploadAPITest(TestCase):
         # The upload state of the timed text track should have been reset
         video.refresh_from_db()
         self.assertEqual(video.upload_state, "pending")
-        self.assertEqual(video.transcode_pipeline, "Peertube")
 
         # Check that the other timed text tracks are not reset
         other_video.refresh_from_db()
@@ -240,7 +239,6 @@ class VideoInitiateUploadAPITest(TestCase):
         # The upload state of the video has been reset
         video.refresh_from_db()
         self.assertEqual(video.upload_state, "pending")
-        self.assertEqual(video.transcode_pipeline, "Peertube")
 
     def test_api_video_initiate_upload_by_playlist_instructor(self):
         """Playlist instructors cannot retrieve an upload policy."""
@@ -302,7 +300,6 @@ class VideoInitiateUploadAPITest(TestCase):
         # The upload state of the video has been reset
         video.refresh_from_db()
         self.assertEqual(video.upload_state, "pending")
-        self.assertEqual(video.transcode_pipeline, "Peertube")
 
     def test_api_video_initiate_upload_by_playlist_admin(self):
         """Playlist admins can retrieve an upload policy."""
@@ -363,7 +360,6 @@ class VideoInitiateUploadAPITest(TestCase):
         # The upload state of the video has been reset
         video.refresh_from_db()
         self.assertEqual(video.upload_state, "pending")
-        self.assertEqual(video.transcode_pipeline, "Peertube")
 
     def test_api_video_initiate_upload_file_without_size(self):
         "With no size field provided, the request should fail"

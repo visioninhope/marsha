@@ -66,4 +66,5 @@ class TranscodeTestCase(TestCase):
         self.assertEqual(self.video.resolutions, [720, 1080])
 
         self.assertEqual(self.video.upload_state, defaults.READY)
+        self.assertEqual(self.video.transcode_pipeline, defaults.PEERTUBE_PIPELINE)
         mock_dispatch_video.assert_called_once_with(self.video, to_admin=True)

@@ -392,9 +392,7 @@ class VideoViewSet(
 
         # Reset the upload state of the video (don't use get_object()
         # as it does not lock the row)
-        Video.objects.filter(pk=pk).update(
-            upload_state=defaults.PENDING, transcode_pipeline=defaults.PEERTUBE_PIPELINE
-        )
+        Video.objects.filter(pk=pk).update(upload_state=defaults.PENDING)
 
         return Response(response)
 
@@ -440,23 +438,22 @@ class VideoViewSet(
         except ValidationError:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        if video.transcode_pipeline == defaults.PEERTUBE_PIPELINE:
-            # Launch the PeerTube transcoding process
-            if settings.TRANSCODING_CALLBACK_DOMAIN:
-                domain = settings.TRANSCODING_CALLBACK_DOMAIN
-            else:
-                domain = f"{request.scheme}://{request.get_host()}"
-            try:
-                transcode_video(
-                    file_path=file_key,
-                    destination=f"scw/{video.pk}/video/{stamp}",
-                    base_name=stamp,
-                    domain=domain,
-                )
-            except VideoNotFoundError:
-                return Response(status=404)
+        # Launch the PeerTube transcoding process
+        if settings.TRANSCODING_CALLBACK_DOMAIN:
+            domain = settings.TRANSCODING_CALLBACK_DOMAIN
+        else:
+            domain = f"{request.scheme}://{request.get_host()}"
+        try:
+            transcode_video(
+                file_path=file_key,
+                destination=f"scw/{video.pk}/video/{stamp}",
+                base_name=stamp,
+                domain=domain,
+            )
+        except VideoNotFoundError:
+            return Response(status=404)
 
-            Video.objects.filter(pk=pk).update(upload_state=defaults.PROCESSING)
+        Video.objects.filter(pk=pk).update(upload_state=defaults.PROCESSING)
 
         video.refresh_from_db()
         channel_layers_utils.dispatch_video(video, to_admin=True)

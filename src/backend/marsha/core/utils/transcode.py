@@ -29,6 +29,7 @@ def transcoding_ended_callback(transcoded_video):
             x.resolution for x in transcoded_video.streamingPlaylist.videoFiles.all()
         ]
     video.upload_state = defaults.READY
+    video.transcode_pipeline = defaults.PEERTUBE_PIPELINE
     video.save()
 
     channel_layers_utils.dispatch_video(video, to_admin=True)
