@@ -1,12 +1,16 @@
-"""Tests for the Video start live API of the Marsha project."""
+"""Tests for the Video upload ended API of the Marsha project."""
 import json
 from unittest import mock
 
-from django.test import TestCase, override_settings
+from django.test import TestCase
 
 from marsha.core import factories, models
 from marsha.core.defaults import PEERTUBE_PIPELINE, PROCESSING
-from marsha.core.simple_jwt.factories import UserAccessTokenFactory
+from marsha.core.simple_jwt.factories import (
+    InstructorOrAdminLtiTokenFactory,
+    StudentLtiTokenFactory,
+    UserAccessTokenFactory,
+)
 
 
 class VideoUploadEndedAPITest(TestCase):
@@ -24,22 +28,19 @@ class VideoUploadEndedAPITest(TestCase):
             transcode_pipeline=PEERTUBE_PIPELINE,
         )
 
-    def assert_user_cannot_end_an_upload(self, user, video):
+    def assert_user_cannot_end_an_upload(self, video, token):
         """Assert the user cannot end an upload."""
 
-        jwt_token = UserAccessTokenFactory(user=user)
         response = self.client.post(
             f"/api/videos/{video.pk}/upload-ended/",
-            HTTP_AUTHORIZATION=f"Bearer {jwt_token}",
+            HTTP_AUTHORIZATION=f"Bearer {token}",
         )
 
         self.assertEqual(response.status_code, 403)
 
-    @override_settings(LIVE_CHAT_ENABLED=True)
-    def assert_user_can_end_an_upload(self, user, video):
+    def assert_user_can_end_an_upload(self, video, token):
         """Assert the user can end an upload."""
 
-        jwt_token = UserAccessTokenFactory(user=user)
         with mock.patch(
             "marsha.websocket.utils.channel_layers_utils.dispatch_video"
         ) as mock_dispatch_video, mock.patch(
@@ -50,7 +51,7 @@ class VideoUploadEndedAPITest(TestCase):
                 {
                     "file_key": f"tmp/{video.pk}/video/4564565456",
                 },
-                HTTP_AUTHORIZATION=f"Bearer {jwt_token}",
+                HTTP_AUTHORIZATION=f"Bearer {token}",
             )
             mock_transcode_video.assert_called_once_with(
                 file_path=f"tmp/{video.pk}/video/4564565456",
@@ -75,7 +76,8 @@ class VideoUploadEndedAPITest(TestCase):
         """Authenticated user without access cannot end an upload."""
         user = factories.UserFactory()
 
-        self.assert_user_cannot_end_an_upload(user, self.some_video)
+        jwt_token = UserAccessTokenFactory(user=user)
+        self.assert_user_cannot_end_an_upload(self.some_video, jwt_token)
 
     def test_end_upload_by_organization_student(self):
         """Organization students cannot end an upload."""
@@ -84,7 +86,8 @@ class VideoUploadEndedAPITest(TestCase):
             role=models.STUDENT,
         )
 
-        self.assert_user_cannot_end_an_upload(organization_access.user, self.some_video)
+        jwt_token = UserAccessTokenFactory(user=organization_access.user)
+        self.assert_user_cannot_end_an_upload(self.some_video, jwt_token)
 
     def test_end_upload_by_organization_instructor(self):
         """Organization instructors cannot end an upload."""
@@ -92,8 +95,8 @@ class VideoUploadEndedAPITest(TestCase):
             organization=self.some_organization,
             role=models.INSTRUCTOR,
         )
-
-        self.assert_user_cannot_end_an_upload(organization_access.user, self.some_video)
+        jwt_token = UserAccessTokenFactory(user=organization_access.user)
+        self.assert_user_cannot_end_an_upload(self.some_video, jwt_token)
 
     def test_end_upload_by_organization_administrator(self):
         """Organization administrators can end an upload."""
@@ -101,8 +104,8 @@ class VideoUploadEndedAPITest(TestCase):
             organization=self.some_organization,
             role=models.ADMINISTRATOR,
         )
-
-        self.assert_user_can_end_an_upload(organization_access.user, self.some_video)
+        jwt_token = UserAccessTokenFactory(user=organization_access.user)
+        self.assert_user_can_end_an_upload(self.some_video, jwt_token)
 
     def test_end_upload_by_consumer_site_any_role(self):
         """Consumer site roles cannot end an upload."""
@@ -110,9 +113,8 @@ class VideoUploadEndedAPITest(TestCase):
             consumer_site=self.some_video.playlist.consumer_site,
         )
 
-        self.assert_user_cannot_end_an_upload(
-            consumer_site_access.user, self.some_video
-        )
+        jwt_token = UserAccessTokenFactory(user=consumer_site_access.user)
+        self.assert_user_cannot_end_an_upload(self.some_video, jwt_token)
 
     def test_end_upload_by_playlist_student(self):
         """Playlist student cannot end an upload."""
@@ -121,7 +123,14 @@ class VideoUploadEndedAPITest(TestCase):
             role=models.STUDENT,
         )
 
-        self.assert_user_cannot_end_an_upload(playlist_access.user, self.some_video)
+        jwt_token = UserAccessTokenFactory(user=playlist_access.user)
+        self.assert_user_cannot_end_an_upload(self.some_video, jwt_token)
+
+    def test_end_upload_by_lti_student(self):
+        """Lti student cannot end an upload."""
+        jwt_token = StudentLtiTokenFactory(playlist=self.some_video.playlist)
+
+        self.assert_user_cannot_end_an_upload(self.some_video, jwt_token)
 
     def test_end_upload_by_playlist_instructor(self):
         """Playlist instructor cannot end an upload."""
@@ -130,7 +139,14 @@ class VideoUploadEndedAPITest(TestCase):
             role=models.INSTRUCTOR,
         )
 
-        self.assert_user_can_end_an_upload(playlist_access.user, self.some_video)
+        jwt_token = UserAccessTokenFactory(user=playlist_access.user)
+        self.assert_user_can_end_an_upload(self.some_video, jwt_token)
+
+    def test_end_upload_by_lti_instructor(self):
+        """Playlist instructor cannot end an upload."""
+        jwt_token = InstructorOrAdminLtiTokenFactory(playlist=self.some_video.playlist)
+
+        self.assert_user_can_end_an_upload(self.some_video, jwt_token)
 
     def test_end_upload_by_playlist_admin(self):
         """Playlist administrator can end an upload."""
@@ -139,7 +155,8 @@ class VideoUploadEndedAPITest(TestCase):
             role=models.ADMINISTRATOR,
         )
 
-        self.assert_user_can_end_an_upload(playlist_access.user, self.some_video)
+        jwt_token = UserAccessTokenFactory(user=playlist_access.user)
+        self.assert_user_can_end_an_upload(self.some_video, jwt_token)
 
     def test_end_upload_with_wrong_body(self):
         """Playlist administrator can end an upload."""

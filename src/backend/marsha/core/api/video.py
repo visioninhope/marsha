@@ -403,7 +403,7 @@ class VideoViewSet(
 
         Calling the endpoint will start the transcoding process of the video.
         The request should have a file_key in the body, which is the key of the
-        file uploaded on AWS. It will be used in the transcoding process to name
+        uploaded file. It will be used in the transcoding process to name
         the generated files, and set the uploaded_on property.
 
         Parameters
@@ -421,22 +421,14 @@ class VideoViewSet(
         # Ensure object exists and user has access to it
         video = self.get_object()
 
-        serializer = serializers.UploadEndedSerializer(data=request.data)
-
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer = serializers.VideoUploadEndedSerializer(
+            data=request.data, context={"pk": pk}
+        )
+        serializer.is_valid(raise_exception=True)
 
         file_key = serializer.validated_data["file_key"]
-        # Should have the "tmp/{video_pk}/video/{stamp}" format
-        [tmp_dir, video_pk, video_dir, stamp] = file_key.split("/")
-
-        # avoid file key being forged
-        if pk != video_pk or tmp_dir != "tmp" or video_dir != "video":
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            to_datetime(stamp)
-        except ValidationError:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # The file_key have the "tmp/{video_pk}/video/{stamp}" format
+        stamp = file_key.split("/")[-1]
 
         # Launch the PeerTube transcoding process
         if settings.TRANSCODING_CALLBACK_DOMAIN:
@@ -453,9 +445,9 @@ class VideoViewSet(
         except VideoNotFoundError:
             return Response(status=404)
 
-        Video.objects.filter(pk=pk).update(upload_state=defaults.PROCESSING)
+        video.upload_state = defaults.PROCESSING
+        video.save(update_fields=["upload_state"])
 
-        video.refresh_from_db()
         channel_layers_utils.dispatch_video(video, to_admin=True)
         serializer = self.get_serializer(video)
 

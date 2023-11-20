@@ -143,7 +143,7 @@ FEATURES_CHOICES = ((VOD_CONVERT, _("VOD conversion")),)
 # Transcode pipelines
 
 AWS_PIPELINE = "AWS"
-PEERTUBE_PIPELINE = "Peertube"
+PEERTUBE_PIPELINE = "peertube"
 
 TRANSCODE_PIPELINE_CHOICES = (
     (AWS_PIPELINE, _("AWS")),

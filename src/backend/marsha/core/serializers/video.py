@@ -33,6 +33,7 @@ from marsha.core.serializers.thumbnail import ThumbnailSerializer
 from marsha.core.serializers.timed_text_track import TimedTextTrackSerializer
 from marsha.core.storage.storage_class import video_storage
 from marsha.core.utils import cloudfront_utils, jitsi_utils, time_utils, xmpp_utils
+from marsha.core.utils.time_utils import to_datetime
 
 
 MAX_DATETIME = timezone.datetime.max.replace(tzinfo=datetime.timezone.utc)
@@ -49,10 +50,24 @@ class UpdateLiveStateSerializer(serializers.Serializer):
     extraParameters = serializers.DictField(allow_null=True, required=False)
 
 
-class UploadEndedSerializer(serializers.Serializer):
+class VideoUploadEndedSerializer(serializers.Serializer):
     """A serializer to validate data submitted on the UploadEnded API endpoint."""
 
     file_key = serializers.CharField()
+
+    def validate_file_key(self, value):
+        """Check if the file_key is valid."""
+        base_video_pk = self.context["pk"]
+        [tmp_dir, video_pk, video_dir, stamp] = value.split("/")
+
+        if base_video_pk != video_pk or tmp_dir != "tmp" or video_dir != "video":
+            raise serializers.ValidationError("file_key is not valid")
+        try:
+            to_datetime(stamp)
+        except serializers.ValidationError as error:
+            raise serializers.ValidationError("file_key is not valid") from error
+
+        return value
 
 
 class InitLiveStateSerializer(serializers.Serializer):
@@ -169,7 +184,7 @@ class VideoBaseSerializer(serializers.ModelSerializer):
             thumbnail_serialized = ThumbnailSerializer(self.thumbnail_instance)
             thumbnail_urls.update(thumbnail_serialized.data.get("urls"))
 
-        urls = {"mp4": {}, "thumbnails": {}}
+        urls = {"mp4": {}, "thumbnails": {}, "manifests": {}}
 
         base = f"{settings.AWS_S3_URL_PROTOCOL}://{settings.CLOUDFRONT_DOMAIN}/{obj.pk}"
         stamp = time_utils.to_timestamp(obj.uploaded_on)

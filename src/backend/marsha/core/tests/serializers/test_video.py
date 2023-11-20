@@ -3,6 +3,7 @@ from datetime import datetime, timezone as baseTimezone
 
 from django.test import TestCase, override_settings
 
+from marsha.core.defaults import AWS_PIPELINE, PEERTUBE_PIPELINE
 from marsha.core.factories import VideoFactory
 from marsha.core.serializers import VideoBaseSerializer
 
@@ -14,7 +15,7 @@ class VideoBaseSerializerTest(TestCase):
         """The VideoBaseSerializer should return the right URLs."""
         date = datetime(2022, 1, 1, tzinfo=baseTimezone.utc)
         video = VideoFactory(
-            transcode_pipeline="AWS",
+            transcode_pipeline=AWS_PIPELINE,
             live_state=None,
             resolutions=[1080],
             uploaded_on=date,
@@ -46,7 +47,7 @@ class VideoBaseSerializerTest(TestCase):
         """The VideoBaseSerializer should return the right URLs."""
         date = datetime(2022, 1, 1, tzinfo=baseTimezone.utc)
         video = VideoFactory(
-            transcode_pipeline="Peertube",
+            transcode_pipeline=PEERTUBE_PIPELINE,
             live_state=None,
             resolutions=[1080],
             uploaded_on=date,
@@ -84,4 +85,7 @@ class VideoBaseSerializerTest(TestCase):
 
         serializer = VideoBaseSerializer(video)
 
-        self.assertEqual({"mp4": {}, "thumbnails": {}}, serializer.data["urls"])
+        self.assertEqual(
+            {"mp4": {}, "thumbnails": {}, "manifests": {}},
+            serializer.data["urls"],
+        )

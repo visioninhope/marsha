@@ -1,9 +1,8 @@
 """ Utils related to transcoding """
+from marsha.core.defaults import PEERTUBE_PIPELINE, READY
 from marsha.core.models.video import Video
 from marsha.core.utils.time_utils import to_datetime
 from marsha.websocket.utils import channel_layers_utils
-
-from .. import defaults
 
 
 def transcoding_ended_callback(transcoded_video):
@@ -28,8 +27,8 @@ def transcoding_ended_callback(transcoded_video):
         video.resolutions = [
             x.resolution for x in transcoded_video.streamingPlaylist.videoFiles.all()
         ]
-    video.upload_state = defaults.READY
-    video.transcode_pipeline = defaults.PEERTUBE_PIPELINE
+    video.upload_state = READY
+    video.transcode_pipeline = PEERTUBE_PIPELINE
     video.save()
 
     channel_layers_utils.dispatch_video(video, to_admin=True)
