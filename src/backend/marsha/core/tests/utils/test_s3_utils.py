@@ -29,7 +29,7 @@ class S3UtilsTestCase(TestCase):
 
     def test_get_aws_s3_client(self):
         """
-        Should instantiate and s3 client with AWS config
+        Should instantiate a s3 client with AWS config
         """
 
         mocked_config = mock.Mock()
@@ -54,7 +54,7 @@ class S3UtilsTestCase(TestCase):
 
     def test_get_videos_s3_client(self):
         """
-        Should instantiate and s3 client with a Scaleway config
+        Should instantiate a s3 client with a Scaleway config
         """
 
         mocked_config = mock.Mock()

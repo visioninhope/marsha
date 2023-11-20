@@ -1,6 +1,5 @@
 """Class storage for the marsha app."""
-from django.conf import settings
-from django.core.files import storage
+from django.core.files.storage import storages
 from django.utils.functional import LazyObject
 
 
@@ -9,10 +8,7 @@ class ConfiguredVideoStorage(LazyObject):
 
     def _setup(self):
         """Setup the video storage."""
-        params = settings.STORAGES["videos"]
-        backend = params.get("BACKEND")
-        options = params.get("OPTIONS", {})
-        self._wrapped = storage.get_storage_class(backend)(**options)
+        self._wrapped = storages["videos"]
 
 
 video_storage = ConfiguredVideoStorage()
