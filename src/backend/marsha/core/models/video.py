@@ -20,6 +20,7 @@ from safedelete.queryset import SafeDeleteQueryset
 from marsha.core.defaults import (
     APPROVAL,
     DELETED,
+    DELETED_VIDEOS_STORAGE_BASE_DIRECTORY,
     ENDED,
     HARVESTED,
     IDLE,
@@ -319,6 +320,8 @@ class Video(BaseFile, RetentionDateObjectMixin):
         base_dir = "vod"
         if base == TMP_VIDEOS_STORAGE_BASE_DIRECTORY:
             base_dir = "tmp"
+        if base == DELETED_VIDEOS_STORAGE_BASE_DIRECTORY:
+            base_dir = "deleted/vod"
 
         return f"{base_dir}/{self.pk}/video/{stamp}"
 
