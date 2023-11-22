@@ -1,18 +1,20 @@
 """ Utils related to transcoding """
+from django_peertube_runner_connector.models import Video as TranscodedVideo
+
 from marsha.core.defaults import PEERTUBE_PIPELINE, READY
 from marsha.core.models.video import Video
 from marsha.core.utils.time_utils import to_datetime
 from marsha.websocket.utils import channel_layers_utils
 
 
-def transcoding_ended_callback(transcoded_video):
+def transcoding_ended_callback(transcoded_video: TranscodedVideo):
     """
     Callback used when the a Peertube runnner has finished
     to transcode a video.
 
     Parameters
     ----------
-    transcoded_video : Type[Video]
+    transcoded_video : Type[TranscodedVideo]
         The transcoded video (The video a django_peertube_runner_connector Video model).
 
     """

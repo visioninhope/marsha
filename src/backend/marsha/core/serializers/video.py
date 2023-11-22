@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from rest_framework import serializers
+from sentry_sdk import capture_message
 
 from marsha.core.defaults import (
     AWS_PIPELINE,
@@ -178,7 +179,18 @@ class VideoBaseSerializer(serializers.ModelSerializer):
 
         if obj.uploaded_on is None:
             return None
+        return self.get_vod_urls(obj)
 
+    def get_vod_urls(self, obj):
+        """Return URLS for a VOD video. Urls differ depending on the
+        transcode pipeline. If no pipeline is set, we use the default AWS one.
+
+        Parameters
+        ----------
+        obj : Type[models.Video]
+            The video that we want to serialize
+
+        """
         thumbnail_urls = {}
         if self.thumbnail_instance and self.thumbnail_instance.uploaded_on is not None:
             thumbnail_serialized = ThumbnailSerializer(self.thumbnail_instance)
@@ -193,6 +205,19 @@ class VideoBaseSerializer(serializers.ModelSerializer):
 
         filename = f"{slugify(obj.playlist.title)}_{stamp}.mp4"
         content_disposition = quote_plus(f"attachment; filename={filename}")
+
+        # Trying to recover the transcoding pipeline
+        if obj.transcode_pipeline is None:
+            if video_storage.exists(f"scw/{obj.pk}/video/{stamp}/thumbnail.jpg"):
+                obj.transcode_pipeline = PEERTUBE_PIPELINE
+            else:  # Fallback to AWS_PIPELINE
+                obj.transcode_pipeline = AWS_PIPELINE
+            obj.save(update_fields=["transcode_pipeline"])
+            capture_message(
+                f"VOD {obj.pk} had no transcode_pipeline and "
+                f"was recovered to {obj.transcode_pipeline}",
+            )
+
         if obj.transcode_pipeline == AWS_PIPELINE:
             for resolution in obj.resolutions:
                 # MP4
