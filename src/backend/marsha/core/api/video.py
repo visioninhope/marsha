@@ -438,7 +438,7 @@ class VideoViewSet(
         try:
             transcode_video(
                 file_path=file_key,
-                destination=f"scw/{video.pk}/video/{stamp}",
+                destination=video.get_videos_storage_prefix(stamp=stamp),
                 base_name=stamp,
                 domain=domain,
             )

@@ -247,7 +247,7 @@ class VideoBaseSerializer(serializers.ModelSerializer):
                 # Previews
                 urls["previews"] = f"{base}/previews/{stamp}_100.jpg"
         elif obj.transcode_pipeline == PEERTUBE_PIPELINE:
-            base = f"scw/{obj.pk}/video/{stamp}"
+            base = obj.get_videos_storage_prefix(stamp=stamp)
             for resolution in obj.resolutions:
                 # MP4
                 mp4_url = (

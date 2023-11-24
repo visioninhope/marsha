@@ -55,7 +55,7 @@ class VideoUploadEndedAPITest(TestCase):
             )
             mock_transcode_video.assert_called_once_with(
                 file_path=f"tmp/{video.pk}/video/4564565456",
-                destination=f"scw/{video.pk}/video/4564565456",
+                destination=f"vod/{video.pk}/video/4564565456",
                 base_name="4564565456",
                 domain="http://testserver",
             )

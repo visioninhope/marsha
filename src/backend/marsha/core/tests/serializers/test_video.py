@@ -58,19 +58,19 @@ class VideoBaseSerializerTest(TestCase):
         serializer = VideoBaseSerializer(video)
 
         self.assertEqual(
-            f"https://abc.cloudfront.net/scw/{video.pk}/video/1640995200/thumbnail.jpg",
+            f"https://abc.cloudfront.net/vod/{video.pk}/video/1640995200/thumbnail.jpg",
             serializer.data["urls"]["thumbnails"][1080],
         )
         self.assertEqual(
-            f"https://abc.cloudfront.net/scw/{video.pk}/video/1640995200/master.m3u8",
+            f"https://abc.cloudfront.net/vod/{video.pk}/video/1640995200/master.m3u8",
             serializer.data["urls"]["manifests"]["hls"],
         )
         self.assertEqual(
-            f"https://abc.cloudfront.net/scw/{video.pk}/video/1640995200/thumbnail.jpg",
+            f"https://abc.cloudfront.net/vod/{video.pk}/video/1640995200/thumbnail.jpg",
             serializer.data["urls"]["previews"],
         )
         self.assertTrue(
-            f"https://abc.cloudfront.net/scw/{video.pk}/"
+            f"https://abc.cloudfront.net/vod/{video.pk}/"
             "video/1640995200/1640995200-1080-fragmented.mp4"
             in serializer.data["urls"]["mp4"][1080]
         )
@@ -133,19 +133,19 @@ class VideoBaseSerializerTest(TestCase):
 
             serializer = VideoBaseSerializer(video)
             self.assertEqual(
-                f"https://abc.cloudfront.net/scw/{video.pk}/video/1640995200/thumbnail.jpg",
+                f"https://abc.cloudfront.net/vod/{video.pk}/video/1640995200/thumbnail.jpg",
                 serializer.data["urls"]["thumbnails"][1080],
             )
             self.assertEqual(
-                f"https://abc.cloudfront.net/scw/{video.pk}/video/1640995200/master.m3u8",
+                f"https://abc.cloudfront.net/vod/{video.pk}/video/1640995200/master.m3u8",
                 serializer.data["urls"]["manifests"]["hls"],
             )
             self.assertEqual(
-                f"https://abc.cloudfront.net/scw/{video.pk}/video/1640995200/thumbnail.jpg",
+                f"https://abc.cloudfront.net/vod/{video.pk}/video/1640995200/thumbnail.jpg",
                 serializer.data["urls"]["previews"],
             )
             self.assertTrue(
-                f"https://abc.cloudfront.net/scw/{video.pk}/"
+                f"https://abc.cloudfront.net/vod/{video.pk}/"
                 "video/1640995200/1640995200-1080-fragmented.mp4"
                 in serializer.data["urls"]["mp4"][1080]
             )
