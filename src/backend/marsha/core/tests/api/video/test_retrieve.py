@@ -9,6 +9,7 @@ from django.test import TestCase, override_settings
 from marsha.core import factories, models
 from marsha.core.api import timezone
 from marsha.core.defaults import (
+    AWS_PIPELINE,
     CC_BY,
     IDLE,
     JITSI,
@@ -1278,6 +1279,7 @@ class VideoRetrieveAPITest(TestCase):
             video=video,
             uploaded_on=datetime(2018, 8, 8, tzinfo=baseTimezone.utc),
             upload_state="ready",
+            process_pipeline=AWS_PIPELINE,
         )
 
         jwt_token = InstructorOrAdminLtiTokenFactory(playlist=video.playlist)

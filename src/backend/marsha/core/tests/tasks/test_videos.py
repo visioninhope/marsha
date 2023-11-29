@@ -1,16 +1,16 @@
-"""Test for celery tasks"""
+"""Test for video celery tasks"""
 # pylint: disable=protected-access
 from unittest import mock
 
 from django.test import TestCase
 
 from marsha.core.factories import VideoFactory
-from marsha.core.tasks import delete_s3_video
+from marsha.core.tasks.video import delete_s3_video
 
 
-class TestTask(TestCase):
+class TestVideoTask(TestCase):
     """
-    Test for celery tasks
+    Test for video celery tasks
     """
 
     def test_delete_s3_video(self):
@@ -22,7 +22,7 @@ class TestTask(TestCase):
         video = VideoFactory()
 
         with mock.patch(
-            "marsha.core.tasks.move_s3_directory"
+            "marsha.core.tasks.video.move_s3_directory"
         ) as mock_move_s3_directory:
             delete_s3_video(str(video.pk))
             mock_move_s3_directory.assert_has_calls(

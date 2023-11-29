@@ -1,4 +1,6 @@
-"""Celery tasks for the core app."""
+"""Celery videos tasks for the core app."""
+
+
 from marsha import settings
 from marsha.celery_app import app
 from marsha.core.defaults import (

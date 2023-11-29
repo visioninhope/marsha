@@ -51,7 +51,7 @@ from marsha.core.views import (
 from marsha.development.api import (
     dummy_video_upload,
     local_document_upload,
-    local_video_upload,
+    local_videos_storage_upload,
 )
 
 
@@ -188,9 +188,9 @@ if "dummy" in settings.STORAGE_BACKEND:
 elif "filesystem" in settings.STORAGE_BACKEND:
     urlpatterns += [
         path(
-            "api/video-upload/<uuid:uuid>/<str:stamp>",
-            local_video_upload,
-            name="local-video-upload",
+            "api/videos-storage-upload/<uuid:uuid>/<str:stamp>/<str:model>",
+            local_videos_storage_upload,
+            name="local-videos-storage-upload",
         )
     ]
     urlpatterns += static(settings.VIDEOS_ROOT, document_root=settings.VIDEOS_ROOT)
